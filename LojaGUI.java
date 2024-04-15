@@ -13,8 +13,6 @@ public class LojaGUI extends JFrame implements ActionListener {
 
     public LojaGUI() {
         listaProdutos = new ArrayList<>();
-        listaProdutos.add(new Produto("Produto 1", 10.0, 5));
-        listaProdutos.add(new Produto("Produto 2", 20.0, 10));
 
         setTitle("Loja");
         setSize(400, 300);
@@ -57,9 +55,8 @@ public class LojaGUI extends JFrame implements ActionListener {
         areaProdutos.setText("");
         areaProdutos.append("=== Produtos na Lista ===\n");
         for (Produto produto : listaProdutos) {
-            areaProdutos.append(
-                    produto.getNome() + " - R$ " + produto.getPreco() + " (" + produto.getQuantidade()
-                            + " unidades)\n");
+            areaProdutos.append(produto.getNome() + " - R$ " + String.format("%.2f", produto.getPreco()) + " ("
+                    + produto.getQuantidade() + " unidades)\n");
         }
     }
 
@@ -87,7 +84,7 @@ public class LojaGUI extends JFrame implements ActionListener {
                 int quantidade = Integer.parseInt(campoQuantidade.getText());
                 listaProdutos.add(new Produto(nome, preco, quantidade));
                 frame.dispose();
-                visualizarProdutos(); // Atualiza a lista de produtos após adicionar um novo
+                visualizarProdutos();
             }
         });
 
@@ -106,16 +103,19 @@ public class LojaGUI extends JFrame implements ActionListener {
 
     private void comprarProduto() {
         JFrame frame = new JFrame("Comprar Produto");
-        frame.setSize(300, 200);
+        frame.setSize(300, 250);
         frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 
         JPanel panel = new JPanel();
-        panel.setLayout(new GridLayout(3, 2));
+        panel.setLayout(new GridLayout(5, 2));
 
         JLabel labelProduto = new JLabel("Nome do Produto:");
         JTextField campoProduto = new JTextField();
         JLabel labelQuantidade = new JLabel("Quantidade:");
         JTextField campoQuantidade = new JTextField();
+        JLabel labelDinheiro = new JLabel("Dinheiro recebido:");
+        JTextField campoDinheiro = new JTextField();
+        JCheckBox checkCartao = new JCheckBox("Pagar com cartão");
 
         JButton botaoComprar = new JButton("Comprar");
         botaoComprar.addActionListener(new ActionListener() {
@@ -123,17 +123,41 @@ public class LojaGUI extends JFrame implements ActionListener {
             public void actionPerformed(ActionEvent e) {
                 String nomeProduto = campoProduto.getText();
                 int quantidadeDesejada = Integer.parseInt(campoQuantidade.getText());
+                double dinheiroRecebido = Double.parseDouble(campoDinheiro.getText());
+                boolean usarCartao = checkCartao.isSelected();
+
                 for (Produto produto : listaProdutos) {
                     if (produto.getNome().equals(nomeProduto)) {
                         if (quantidadeDesejada <= produto.getQuantidade()) {
                             double total = quantidadeDesejada * produto.getPreco();
-                            JOptionPane.showMessageDialog(null, "Total a pagar: R$ " + String.format("%.2f", total));
+
+                            if (usarCartao) {
+                                // Caso seja pagamento com cartão
+                                JOptionPane.showMessageDialog(null,
+                                        "Compra com cartão realizada com sucesso.\nTotal pago: R$ "
+                                                + String.format("%.2f", total));
+                            } else {
+                                // Caso seja pagamento com dinheiro
+                                if (dinheiroRecebido >= total) {
+                                    double troco = dinheiroRecebido - total;
+                                    JOptionPane.showMessageDialog(null,
+                                            "Compra realizada com sucesso.\nTotal pago: R$ "
+                                                    + String.format("%.2f", total) + "\nTroco: R$ "
+                                                    + String.format("%.2f", troco));
+                                } else {
+                                    JOptionPane.showMessageDialog(null,
+                                            "Dinheiro recebido insuficiente. Compra não realizada.");
+                                    return;
+                                }
+                            }
+
                             produto.setQuantidade(produto.getQuantidade() - quantidadeDesejada);
+                            frame.dispose();
+                            return;
                         } else {
                             JOptionPane.showMessageDialog(null, "Quantidade insuficiente em estoque.");
+                            return;
                         }
-                        frame.dispose();
-                        return;
                     }
                 }
                 JOptionPane.showMessageDialog(null, "Produto não encontrado.");
@@ -144,7 +168,9 @@ public class LojaGUI extends JFrame implements ActionListener {
         panel.add(campoProduto);
         panel.add(labelQuantidade);
         panel.add(campoQuantidade);
-        panel.add(new JLabel()); // Espaço vazio
+        panel.add(labelDinheiro);
+        panel.add(campoDinheiro);
+        panel.add(checkCartao);
         panel.add(botaoComprar);
 
         frame.add(panel);
